@@ -8,9 +8,14 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=chaoxing.com
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
-//控制面板，5*n+m，服务端AI多次调用
+//控制面板，5*n+m，服务端AI多次调用，推广
+
+
 
 (function() {
+    var index = 0//从第一题开始
+    var num = 5 //每次最多5题
+    
     'use strict';
     //获取题目与选项
     var getsubject =function(){
@@ -39,6 +44,7 @@
         return subject
     }
 
+
     //初始化（清空已选答案）
     var clear = function(){
         document.querySelectorAll(".stem_answer").forEach(function (item) {
@@ -50,37 +56,42 @@
 
     //答案处理与填充
     var handle = function(response){
-        const result = JSON.parse(response.responseText);//response.responseText将application/json转为字符串，再用parse解析为'{}'对象
-        var ls = JSON.parse(result.answer)//答案列表
-            for (let j = 0; j < ls.length; j++) {
-                for (let k=0; k<ls[j].length;k++){
-                    var choice = ls[j][k].charCodeAt(0) - 65;
-                    document.querySelectorAll(".stem_answer")[j].querySelectorAll("span")[choice].click()
-                }
+        const ls = JSON.parse(JSON.parse(response.responseText));
+        console.log(ls)
+        for (let j =0; j < ls.length; j++) {
+            for (let k=0; k<ls[j].length;k++){
+                var choice = ls[j][k].charCodeAt(0) - 65;
+                document.querySelectorAll(".stem_answer")[j+index].querySelectorAll("span")[choice].click()
             }
-        document.querySelector(".sub-button").childNodes[1].click()//暂存
+        }
+    }
+
+    //接口
+    var api = function(sub) {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'POST',
+                url: 'http://localhost:5000/solve',
+                headers: { 'Content-Type': 'application/json' },
+                data: JSON.stringify({ subject: sub }),
+                onload: function(response) {
+                    handle(response)
+                    resolve() // 完成一批
+                },
+                onerror: reject
+            });
+        });
     }
 
     //主函数
     var main =async function(){
-        clear()
-        var sub =getsubject()
-        try {
-            const response = await new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    method: 'POST',
-                    url: 'http://localhost:5000/solve',
-                    headers: { 'Content-Type': 'application/json' },
-                    data: JSON.stringify({ subject:sub }),
-                    onload: resolve,
-                    onerror: reject
-                });
-            });
-            handle(response)
-        } catch (error) {
-            console.error('请求失败:', error);
+        clear()//初始化
+        var subjects = getsubject()//获取题目
+        while (index < subjects.length) {
+            await api(subjects.slice(index, index + num)) // 等待当前批次完成
+            index += num
         }
-
+        //document.querySelector(".sub-button").childNodes[1].click()//暂存
     }
     window.setTimeout(main,2000)
 })();
