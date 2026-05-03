@@ -6,13 +6,10 @@ import os
 app = Flask(__name__)
 CORS(app)  # 允许油猴脚本跨域请求
 
-@app.route('/solve', methods=['POST'])
-def solve():
-    print("接收到请求")
-    data = request.json
-    subject= data.get('subject',[])
-    
-    
+
+
+#AI调用
+def ai(subject):
     # 创建OpenAI客户端
     client = OpenAI(
     api_key=os.getenv("DASHSCOPE_API_KEY"),
@@ -22,7 +19,7 @@ def solve():
     # 构造提示词 - 只问书名相关的问题
     prompt=f'''
     以下为任务要求：
-    1. 题目列表：{subject[0:5]}
+    1. 题目列表：{subject}
     2. 请执行以下操作：
     - 为每道题生成对应的答案（选择题输出选项字母，如"A"、"BCD"；其他题型输出正确内容）
     - 答案必须与题目一一对应，按顺序排列
@@ -41,10 +38,27 @@ def solve():
         {"role": "user", "content": prompt}
     ]
     )
-    print(completion.choices[0].message.content)
-    return jsonify({"answer":completion.choices[0].message.content})
+    return completion.choices[0].message.content
     
+
+
+#数据接收
+@app.route('/solve', methods=['POST'])
+def solve():
+    print("接收到请求")
+    data = request.json
+    subject= data.get('subject',[])
+    answer=ai(subject)
+    print(answer)
+    return jsonify(answer)
 
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+    #print(completion.choices[0].message.content)
+    #return jsonify({"answer":completion.choices[0].message.content})
+
+
+    
+
+
