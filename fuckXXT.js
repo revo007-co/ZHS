@@ -9,6 +9,7 @@
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
 //控制面板，5*n+m，服务端AI多次调用，推广
+//初代：仅适用于XXT刷题
 
 
 
