@@ -1,11 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,send_file
 from flask_cors import CORS  # 解决跨域
 from openai import OpenAI
 import os
 
 app = Flask(__name__)
 CORS(app)  # 允许油猴脚本跨域请求
-
 
 
 #AI调用
@@ -51,6 +50,18 @@ def solve():
     answer=ai(subject)
     print(answer)
     return jsonify(answer)
+
+
+@app.route('/csv', methods=['POST'])
+def csv():
+    print("接收到请求")
+    data = request.json
+    print(type(data))
+    f=open("sub.csv","w",encoding="UTF-8")
+    f.writelines(item + '\n' for item in data)
+    f.close()
+    return send_file("sub.csv")
+
 
     
 if __name__ == '__main__':
