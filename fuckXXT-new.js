@@ -1,16 +1,16 @@
 // ==UserScript==
-// @name         fuckXXT
+// @name         fuckXXT.insideAI
 // @namespace    http://tampermonkey.net/
-// @version      2026-05-01
+// @version      1.0
 // @description  try to take over the world!
 // @author       You
 // @match        https://*/*
 // @match        https://mooc1.chaoxing.com/mooc-ans/mooc2/*
 // @match        https://mooc1.chaoxing.com/mycourse/studentstudy?chapterId=*&courseId=*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=chaoxing.com
+// @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAA5RJREFUWEftlluoVVUUhr/z4IHIwBfFykgTQkQyMMK0pJv4YIWXSsoHBSvNS0WKcUSwIEWwlEjBEEUU0bzkQ5EP3hMqK/GGZRJiN8METRRUFHR+Mlass85Ze6/ty0FwwOJc5hxz/PMfY/xjNtHB1tTB8bmlATQD9wB3A6eBE8DVRhltlAGDvQKMBB4vBLuS1n4Fvk+gPgN+yq13AgYDPeI7BfwBbG8EwPvA63HrfOyDwF3AAwVAnwO/AENSoCcAQRStpSqA9cBL4b0f+AbYm1jYFvS71AXoC4wD3ihJxRbgh2DhKaC5CoBrucNmp9t+DFyKNAwHBgLnAH//L/YOAN7LgX4XWJQ7ZwywDvitHgBv+Wg4ejsplYl3gEGFWz4C7Cv8L8+c+7+Lov0SEOSntQDMBWbFgeZxTwT3UO0YsDaqX1p/LqF9MzAC+Au4LxXjVuBZ4Kg/ywD0i2q+MzktT86vAW8Bn0SQacAy4HKFtnsYMPfdgQ25tIwCNpcBWADMCMqk7pkoOOM9D3xVIXB+iynL18DLAaZUCXcCTwKToqdtwTkpb+buhQaDS/caoFv4/R/cv8sYyCrfAvwxHAW0q8Hgps5U5W0CsCL7R3sAVKs/Q1bvSMUl4n8AWWnELGALWfvWfAOm1m9mLQCPhYNS6q0vAL8DPStGV2DUgGGx/81UgEujEwTxdWjGjeX2GLDPbTXp9rCxSdlOVmDAHBtY0dFkzHrxAprq6IzYBLxYxkAW3PXDwEMVb+2MsGseTCAuAh8mmZ1X8JWFicBiwDZuw0A+eLZuDztsyuzVNAum5FTRLjG4wlS03TGYDC6IVgD6RJ/fC6wO0RiaUvRB2mULFk1lmwy4R1OyFaxixef9/gW6Ar1CPVsB+CKGi3l7GpiqTif1OxNzXNnUWZb8LE7NQnXfqhosuVSqIxZh/1ShByJ3Uq7Gaz4Y1O4lIbmjgftjzfowx060eibYrIXbqKgApgMfAYeAt+NxoW6bDtUvb754TItDqKplouYcUFNamQCeC4mtdaDvPQOvrBo1sdaS64QjgAOujWU6YK8rm4qQY1MllBHnt4IyPjwVkfkxmsuw9AYW5mbG3/ECand/vQdJ5mS+vVFmTkNZOR4PUV/H1pI15Nc5Nqp8jt1SqwrAA3xYWiMWYz2zgAWt8tW0RgBkB5kmq9nq9pnu7c+HXJvrjUlwdiSwZ+sFd/1mAFQ5t/Ke2wA6nIHr54C0BK9FxloAAAAASUVORK5CYII=
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
-//控制面板，推广，脚本间通信，兼容
+//推广，兼容，内置后端，优化题目信息结构,题目记忆功能，题库法，启停
 
 
 (function() {
@@ -22,7 +22,6 @@
 
     //控制面板
     const panel = document.createElement("div");
-    panel.id = 'panel';
     panel.style.cssText = `
         position: fixed;
         display : flex;
@@ -65,14 +64,9 @@
     btn4.className = 'btn';
     btn4.textContent = '导出'
 
-    const targetBody = document.getElementById('body-content');
-    if (targetBody) {
-        targetBody.appendChild(panel);
+    if (window.top === window.self) {
+        document.body.appendChild(panel);
     }
-    else{
-        document.body.appendChild(panel)
-    }
-
     panel.appendChild(btn1)
     panel.appendChild(btn2)
     panel.appendChild(btn3)
@@ -82,27 +76,15 @@
 
     //xxt获取题目与选项
     var getsubject =function(){
-        var qusls = [];
-        var optls = [];
         var subject = []
-
         var qus = document.querySelectorAll(".padBom50.questionLi.fontLabel.singleQuesId");
         qus.forEach(function (item) {
             var qusname = item.querySelector(".mark_name.colorDeep.fontLabel.workTextWrap")?.childNodes[1]?.textContent +
-                item.querySelector(".mark_name.colorDeep.fontLabel.workTextWrap")?.childNodes[2]?.textContent.slice(0.-8);
-            qusls.push(qusname);//已获取题目
-
+                item.querySelector(".mark_name.colorDeep.fontLabel.workTextWrap")?.childNodes[2]?.textContent.slice(0,-8);
             var optElements = item.querySelectorAll('.fl.answer_p');
-            var optnamels = Array.from(optElements).map(opt => opt.textContent);
-            optls.push(optnamels);//已获取选项
+            var optnamels = Array.from(optElements).map(opt => opt.parentNode.childNodes[1].textContent+':'+opt.textContent);
+            subject.push('题目:'+qusname+'。选项:'+optnamels.join(","));
         });
-
-        for (let i = 0; i < qusls.length; i++) {
-            subject.push({
-                "question": qusls[i],
-                "options": optls[i]
-            });
-        }
         console.log(subject)
         return subject
     }
@@ -118,7 +100,7 @@
 
     //xxt答案处理与填充
     var handle = function(response){
-        const ls = JSON.parse(JSON.parse(response.responseText));
+        const ls = JSON.parse(response.responseText);
         console.log(ls)
         for (let j =0; j < ls.length; j++) {
             for (let k=0; k<ls[j].length;k++){
@@ -128,14 +110,14 @@
         }
     }
 
-    //接口1
-    var solve = function(sub) {
+    //接口solve
+    var solve = function(subject) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
                 url: 'http://localhost:5000/solve',
                 headers: { 'Content-Type': 'application/json' },
-                data: JSON.stringify({ subject: sub }),
+                data: JSON.stringify( subject ),
                 onload: function(response) {
                     handle(response)
                     resolve() // 完成一批
@@ -147,21 +129,22 @@
 
     //学习通作业主函数
     var xxt =async function(){
-        alert("启动")
+        index=0
         clear()//初始化
         var subjects = getsubject()//获取题目
         while (index < subjects.length) {
             await solve(subjects.slice(index, index + num)) // 等待当前批次完成
             index += num
+            //break调试点
         }
         //document.querySelector(".sub-button").childNodes[1].click()//暂存
     }
     //-------------------------------------------------------------------------------------
 
 
-    //xxt导出题目
+    //xxt导出题目为csv格式
     var subexp = function(){
-        var csv = []
+        var csvls = []
         var div = document.querySelectorAll(".aiAreaContent")
         div.forEach(function (div) {
             var sub = ""
@@ -171,38 +154,28 @@
                 sub+=ls.textContent + "<br>"
             })
             ans=div.querySelector(".colorDeep.marginRight40.fl").textContent.slice(-1)
-            csv.push(`"${sub}","${ans}"`)
+            csvls.push(`"${sub}","${ans}"`)
         });
-        console.log(csv)
-        return(csv)
+        console.log(csvls)
+        return(csvls)
     }
-    //接口2
-    var csv = function(subs) {
-        return new Promise((resolve, reject) => {
-            GM_xmlhttpRequest({
-                method: 'POST',
-                url: 'http://localhost:5000/csv',
-                headers: { 'Content-Type': 'application/json' },
-                data: JSON.stringify(subs),
-                onload: function(res) {
-                // 手动触发下载
-                const blob = new Blob([res.responseText], { type: 'text/plain' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'output.csv';
-                link.click();
-                URL.revokeObjectURL(link.href);
-                resolve(res);
-            },
-                onerror: reject
-            });
-        });
+
+    //xxt下载csv文件
+    var creatCSV = function(csvls){
+        var csv = csvls.join("\n")
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = 'sub.csv';
+        link.click();
+        URL.revokeObjectURL(url);
     }
 
     //学习通导出主函数
     var xxtexp = async function(){
-        var subs=subexp()
-        await csv(subs)
+        var csvls=subexp()
+        creatCSV(csvls)
     }
     //--------------------------------------------------------------------------------------------
 
@@ -210,17 +183,17 @@
     //URL判断
     var url = function(){
         let currentURL = window.location.href;
-        if (/^https:\/\/onlineexamh5new\.zhihuishu\.com\/stuExamWeb\.html#.*$/.test(currentURL)){
+        if (/^https:\/\/onlineexamh5new\.zhihuishu\.com\/stuExamWeb\.html#.*$/.test(currentURL)){//智慧树
             //btn1.onclick=zhs
             btn1.style.cssText=`
             background-color:white;
             `;
-        }else if(/^https:\/\/mooc1\.chaoxing\.com\/mooc-ans\/mooc2\/work\/view?.*$/.test(currentURL)){//学习通view
+        }else if(/^https:\/\/mooc1\.chaoxing\.com\/mooc-ans\/mooc2\/work\/view?.*$/.test(currentURL)){//学习通view导出
             btn4.onclick=xxtexp
             btn4.style.cssText=`
             background-color:white;
             `;
-        }else if(/^https:\/\/mooc1\.chaoxing\.com\/mooc-ans\/mooc2\/work\/dowork?.*$/.test(currentURL)){//学习通dowork
+        }else if(/^https:\/\/mooc1\.chaoxing\.com\/mooc-ans\/mooc2\/work\/dowork?.*$/.test(currentURL)){//学习通dowork作业
             btn1.onclick=xxt
             btn1.style.cssText=`
             background-color:white;
