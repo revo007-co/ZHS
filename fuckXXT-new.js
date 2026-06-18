@@ -1,16 +1,16 @@
 // ==UserScript==
-// @name         fuckXXT.insideAI-copy
+// @name         fuckXXT.insideAI
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  try to take over the world!
 // @author       You
-// @match        https://*/*
+// @match        *://*/*
 // @match        https://mooc1.chaoxing.com/mooc-ans/mooc2/*
 // @match        https://mooc1.chaoxing.com/mycourse/studentstudy?chapterId=*&courseId=*
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAA5RJREFUWEftlluoVVUUhr/z4IHIwBfFykgTQkQyMMK0pJv4YIWXSsoHBSvNS0WKcUSwIEWwlEjBEEUU0bzkQ5EP3hMqK/GGZRJiN8METRRUFHR+Mlass85Ze6/ty0FwwOJc5hxz/PMfY/xjNtHB1tTB8bmlATQD9wB3A6eBE8DVRhltlAGDvQKMBB4vBLuS1n4Fvk+gPgN+yq13AgYDPeI7BfwBbG8EwPvA63HrfOyDwF3AAwVAnwO/AENSoCcAQRStpSqA9cBL4b0f+AbYm1jYFvS71AXoC4wD3ihJxRbgh2DhKaC5CoBrucNmp9t+DFyKNAwHBgLnAH//L/YOAN7LgX4XWJQ7ZwywDvitHgBv+Wg4ejsplYl3gEGFWz4C7Cv8L8+c+7+Lov0SEOSntQDMBWbFgeZxTwT3UO0YsDaqX1p/LqF9MzAC+Au4LxXjVuBZ4Kg/ywD0i2q+MzktT86vAW8Bn0SQacAy4HKFtnsYMPfdgQ25tIwCNpcBWADMCMqk7pkoOOM9D3xVIXB+iynL18DLAaZUCXcCTwKToqdtwTkpb+buhQaDS/caoFv4/R/cv8sYyCrfAvwxHAW0q8Hgps5U5W0CsCL7R3sAVKs/Q1bvSMUl4n8AWWnELGALWfvWfAOm1m9mLQCPhYNS6q0vAL8DPStGV2DUgGGx/81UgEujEwTxdWjGjeX2GLDPbTXp9rCxSdlOVmDAHBtY0dFkzHrxAprq6IzYBLxYxkAW3PXDwEMVb+2MsGseTCAuAh8mmZ1X8JWFicBiwDZuw0A+eLZuDztsyuzVNAum5FTRLjG4wlS03TGYDC6IVgD6RJ/fC6wO0RiaUvRB2mULFk1lmwy4R1OyFaxixef9/gW6Ar1CPVsB+CKGi3l7GpiqTif1OxNzXNnUWZb8LE7NQnXfqhosuVSqIxZh/1ShByJ3Uq7Gaz4Y1O4lIbmjgftjzfowx060eibYrIXbqKgApgMfAYeAt+NxoW6bDtUvb754TItDqKplouYcUFNamQCeC4mtdaDvPQOvrBo1sdaS64QjgAOujWU6YK8rm4qQY1MllBHnt4IyPjwVkfkxmsuw9AYW5mbG3/ECand/vQdJ5mS+vVFmTkNZOR4PUV/H1pI15Nc5Nqp8jt1SqwrAA3xYWiMWYz2zgAWt8tW0RgBkB5kmq9nq9pnu7c+HXJvrjUlwdiSwZ+sFd/1mAFQ5t/Ke2wA6nIHr54C0BK9FxloAAAAASUVORK5CYII=
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
-//推广，兼容，内置后端，优化题目信息结构,题目记忆功能，题库法，启停，拖动
+//推广，兼容，题库法，拖动
 
 
 (function() {
@@ -154,7 +154,7 @@
                 sub+=ls.textContent + "<br>"
             })
             ans=div.querySelector(".colorDeep.marginRight40.fl").textContent.slice(-1)
-            csvls。push(`"${sub}","${ans}"`)
+            csvls.push(`"${sub}","${ans}"`)
         });
         console.log(csvls)
         return(csvls)
@@ -179,6 +179,33 @@
     }
     //--------------------------------------------------------------------------------------------
 
+    //zjoocexp
+    var zjoocexp = function(){
+        var csvls = [];
+        var div = document.querySelectorAll(".clearfix.questiono-header.el-col.el-col-24")
+        div.forEach(function (div) {
+            var subopt = ''
+            var ans = div.parentNode.querySelector(".common_test_text").textContent
+            var sub = div.querySelector(".processing_img").textContent
+            subopt += sub + "<br>"
+            var optls = div.parentNode.querySelectorAll(".dp-ib.processing_img");
+            optls.forEach(function (opt, index) {
+                var prefix = String.fromCharCode(65 + index); // A=65, B=66...
+                subopt += prefix + ". " + opt.textContent + "<br>";
+            });
+
+            csvls.push(`"${subopt}","${ans}"`)
+        });
+        console.log(csvls);
+        return(csvls)
+    }
+
+    //在浙学导出主函数
+    var zjooc =function(){
+        var csvls=zjoocexp()
+        creatCSV(csvls)
+    }
+
 
     //URL判断
     var url = function(){
@@ -198,7 +225,13 @@
             btn1.style.cssText=`
             background-color:white;
             `;
-        }else{
+        }else if(/^https:\/\/www\.zjooc\.cn\/.*$/.test(currentURL)){
+            btn4.onclick=zjooc //若没有定义，后面执行不了
+            btn4.style.cssText=`
+            background-color:white;
+            `;
+        }
+        else{
             console.log('未匹配到有效url')
         }
     }
